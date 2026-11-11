@@ -1,0 +1,47 @@
+services:
+  web:
+    image: odoo:20
+    container_name: startcelular
+    depends_on:
+      - db
+    ports:
+      - "8060:8069"
+    volumes:
+      - odoo_web_data:/var/lib/odoo
+      - ./addons:/mnt/extra-addons
+      - ./odoo.conf:/etc/odoo/odoo.conf
+    environment:
+      - HOST=db
+      - USER=odoo
+      - PASSWORD=odoo
+
+  db:
+    image: postgres:17-alpine
+    container_name: startcelular_db
+    ports:
+      - "5435:5432"
+    environment:
+      - POSTGRES_USER=odoo
+      - POSTGRES_PASSWORD=odoo
+      - POSTGRES_DB=postgres
+    volumes:
+      - ./postgresql:/var/lib/postgresql/data
+
+  frontend:
+    image: node:26-alpine
+    container_name: startcelular_frontend
+    working_dir: /app
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    environment:
+      - VITE_ODOO_BASE_URL=http://localhost:8060
+      - VITE_ODOO_DATABASE=sc_db
+    depends_on:
+      - web
+
+volumes:
+  odoo_web_data:
